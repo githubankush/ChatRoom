@@ -78,3 +78,36 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 };
+
+export const profile = async (req,res) => {
+  try{
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user);
+    
+  }
+  catch(err) {
+    console.error("Profile error:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
+
+export const logout = async (req, res) => {
+  try {
+    // Clear the cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    // Optionally, you can also clear the user session or token from your database if needed
+
+    res.status(200).json({ message: "Logout successful." });
+  } catch (err) {
+    console.error("Logout error:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}

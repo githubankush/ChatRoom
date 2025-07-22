@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import axios from "../axios";
 import Input from "../components/Input";
+import { useNavigate } from "react-router-dom";
+import {toast} from 'react-hot-toast';
 
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-
+  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const navigate = useNavigate();
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
@@ -13,6 +15,8 @@ const Register = () => {
     try {
       const res = await axios.post("/api/auth/register", form, { withCredentials: true });
       alert("Registration successful");
+      toast.success("Registration successful");
+      navigate('/login'); // Redirect to login page after successful registration
     } catch (err) {
       alert(err.response?.data?.message || "Registration failed");
     }
@@ -22,7 +26,7 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
-        <Input label="Name" name="name" value={form.name} onChange={handleChange} required />
+        <Input label="Name" name="username" value={form.username} onChange={handleChange} required />
         <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
         <Input label="Password" name="password" type="password" value={form.password} onChange={handleChange} required />
         <button
