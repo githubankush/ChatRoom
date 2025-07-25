@@ -111,3 +111,25 @@ export const logout = async (req, res) => {
     res.status(500).json({ message: "Internal server error." });
   }
 }
+
+
+export const searchUsers = async (req, res) => {
+  try {
+    const searchQuery = req.query.search;
+
+    if (!searchQuery) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const users = await User.find({
+      $or: [
+        { name: { $regex: searchQuery, $options: "i" } },
+        { email: { $regex: searchQuery, $options: "i" } }
+      ]
+    }).select("-password"); // exclude password from results
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Error searching users", error });
+  }
+};

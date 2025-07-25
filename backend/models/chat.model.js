@@ -11,6 +11,10 @@ const chatSchema = new mongoose.Schema({
     trim: true,
     default: '', // Optional for 1-1 chat
   },
+  avatar: {
+    type: String, // URL to avatar image
+    default: '',  // Or set a default avatar URL
+  },
 
   members: [
     {

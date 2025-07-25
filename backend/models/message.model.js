@@ -18,9 +18,12 @@ const messageSchema = new mongoose.Schema({
     trim: true,
   },
 
-  media: {
-    type: String, // Image, video, or file URL
-  },
+   media: {
+      buffer: Buffer,
+      mimetype: String,
+      originalName: String,
+    },
+  
 
   seenBy: [
     {

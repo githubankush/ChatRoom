@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
-
-export const authMiddleware = (req, res, next) => {
+import User from '../models/user.model.js';
+export const authMiddleware = async (req, res, next) => {
     const token = req.cookies?.token;
     console.log('Token from cookies:', token);
     if (!token) {
@@ -12,9 +12,9 @@ export const authMiddleware = (req, res, next) => {
         if (!decoded || !decoded.id) {
             return res.status(401).json({ message: 'Invalid token' });
         }
-        console.log('Decoded token:', decoded);
-
-        req.user = decoded;
+        console.log('Decoded token id:', decoded.id);
+        req.user = await User.findById(decoded.id).select('-password');
+        console.log('User details:', req.user);
         next();
     }
     catch (err) {

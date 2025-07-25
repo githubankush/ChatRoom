@@ -11,7 +11,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     // Clear user data and token (optional: call logout API)
-    await axios.get("/api/auth/logout", { withCredentials: true });
+    await axios.get("/auth/logout", { withCredentials: true });
     alert("Logout successful");
     toast.success("Logout successful");
     setUser(null);

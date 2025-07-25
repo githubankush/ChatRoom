@@ -3,7 +3,7 @@ import axios from "../axios";
 import Input from "../components/Input";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'react-hot-toast';
-import { useAuth } from "../context/authContext";
+import { useAuth } from '../context/authContext'
 
 const Login = () => {
   const { fetchUser } = useAuth(); 
@@ -14,12 +14,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("/api/auth/login", form, { withCredentials: true });
+      const res = await axios.post("/auth/login", form, { withCredentials: true });
       alert("Login successful");
       toast.success("Login successful");
       fetchUser(); // Fetch user profile after successful login
       // Redirect to profile or home page after successful login
-      navigate('/profile'); // Assuming you have a profile page
+      navigate('/chat'); // Assuming you have a profile page
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
     }
