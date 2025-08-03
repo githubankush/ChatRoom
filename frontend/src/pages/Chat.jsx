@@ -5,7 +5,7 @@ import ChatList from "../components/ChatList";
 import ChatWindow from "../components/ChatWindow";
 import MessageInput from "../components/MessageInput";
 import { useAuth } from "../context/authContext";
-
+import Loader from "../components/Loader";
 const Chat = () => {
   const { fetchUserChats, fetchMessages, selectedChat } = useChat();
   const { user, loading } = useAuth();
@@ -25,11 +25,14 @@ const Chat = () => {
     if (user) fetchUserChats();
   }, [loading, user]);
 
+  
+
+
+
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <p className="text-gray-700 dark:text-gray-200 text-xl">Loading...</p>
-      </div>
+      <Loader />
     );
   }
 
@@ -38,7 +41,7 @@ const Chat = () => {
   const showChatArea = !isMobile || (isMobile && selectedChat);
 
   return (
-   <div className="flex h-full w-full bg-white dark:bg-gray-900">
+   <div className="flex h-[calc(100vh-64px)] w-full bg-white dark:bg-gray-900 overflow-hidden">
   {/* Sidebar - ChatList */}
   <div
     className={`${
@@ -52,16 +55,16 @@ const Chat = () => {
     <ChatList onSelect={fetchMessages} />
   </div>
 
-  {/* Chat Window */}
+  {/* Chat Window + Message Input */}
   <div
     className={`${
       showChatArea
-        ? "flex flex-col w-full sm:w-1/3 md:w-3/5 lg:w-[68%] xl:w-[70%]"
+        ? "flex flex-col max-h-[calc(100vh-64px)] w-full sm:w-1/3 md:w-3/5 lg:w-[68%] xl:w-[70%]"
         : "hidden"
     }`}
   >
     {/* ChatWindow */}
-    <div className="flex-1 ">
+    <div className="overflow-hidden">
       <ChatWindow />
     </div>
 

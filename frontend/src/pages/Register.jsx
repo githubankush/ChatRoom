@@ -23,9 +23,9 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 text-white bg-black">
+      <form onSubmit={handleSubmit} className="bg-black p-8 rounded-xl shadow-lg w-full max-w-md text-white">
+        <h2 className="text-2xl font-bold mb-6 text-center text-white">Create Account</h2>
         <Input label="Name" name="username" value={form.username} onChange={handleChange} required />
         <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
         <Input label="Password" name="password" type="password" value={form.password} onChange={handleChange} required />

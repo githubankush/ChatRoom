@@ -1,6 +1,13 @@
 import User from '../models/user.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -131,5 +138,50 @@ export const searchUsers = async (req, res) => {
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Error searching users", error });
+  }
+};
+
+
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { username, email } = req.body;
+    if (username) user.username = username;
+    if (email) user.email = email;
+
+    if (req.file) {
+      const uploadsDir = path.join(__dirname, "../uploads");
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+
+      // Delete old avatar
+      if (user.avatar && user.avatar.startsWith("/uploads/")) {
+        const oldPath = path.join(__dirname, "..", user.avatar);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      }
+
+      const ext = path.extname(req.file.originalname);
+      const filename = `${userId}_${Date.now()}${ext}`;
+      const filePath = path.join(uploadsDir, filename);
+
+      fs.writeFileSync(filePath, req.file.buffer);
+
+      user.avatar = `/uploads/${filename}`;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+    });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ message: "Profile update failed", error: err.message });
   }
 };

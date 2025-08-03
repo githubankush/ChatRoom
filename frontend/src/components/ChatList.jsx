@@ -3,7 +3,9 @@ import axios from "../axios";
 import { useAuth } from "../context/authContext";
 import { useChatContext } from "../context/chatContext";
 import { FaSearch } from "react-icons/fa";
-
+import FriendButton from "../components/FriendButton";
+import Loader from "../components/Loader";
+import formatChatTime  from "../utils/formatChatTime"; 
 const ChatList = () => {
   const { user } = useAuth();
   const { chats, selectedChat, setChats, setSelectedChat } = useChatContext();
@@ -84,23 +86,24 @@ const ChatList = () => {
       {/* Search Results */}
       {searchResults.length > 0 && (
         <div className="max-h-60 overflow-y-auto p-2">
-          {searchResults.map((user) => (
+          {searchResults.map((userSearched) => (
             <div
-              key={user._id}
-              onClick={() => accessChat(user._id)}
+              key={userSearched._id}
+              onClick={() => accessChat(userSearched._id)}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <img
-                src={user.avatar || "/default-avatar.png"}
+                src={userSearched.avatar || "/default-avatar.png"}
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {user.username}
+                  {userSearched.username}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user.email}
+                  {userSearched.email}
                 </p>
+                <FriendButton userId={user._id} userSearched={userSearched._id} />
               </div>
             </div>
           ))}
@@ -110,9 +113,9 @@ const ChatList = () => {
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <p className="text-center text-sm text-gray-500 p-4">
-            Loading chats...
-          </p>
+          <h1 className="text-center text-sm text-gray-500 p-4">
+            <Loader />
+          </h1>
         ) : (
           chats.map((chat) => {
             const otherUser = chat.members?.find((m) => m._id !== user?._id);
@@ -141,13 +144,11 @@ const ChatList = () => {
                     {chat.latestMessage?.text || "Say hello!"}
                   </p>
                 </div>
-                <div className="test-sm text-gray-500 dark:text-gray-400">
-                  {new Date(chat?.updatedAt).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "numeric",
-                    hour12: true,
-                  })}
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {formatChatTime(chat?.updatedAt)}
                 </div>
+                
+
               </div>
             );
           })

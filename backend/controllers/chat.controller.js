@@ -88,13 +88,11 @@ export const fetchMessages = async (req, res) => {
 };
 
 // @desc   Send a new message to a chat
-// @route  POST /api/chat/:chatId/message
-// @access Private
 export const sendMessage = async (req, res) => {
   try {
     const { chatId } = req.params;
     const { text } = req.body;
-    const mediaFile = req.file; // multer parses this
+    const mediaFile = req.file;
 
     if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
     if (!text && !mediaFile) {
@@ -105,16 +103,20 @@ export const sendMessage = async (req, res) => {
       sender: req.user._id,
       chat: chatId,
       text: text || "",
-      media: mediaFile ? mediaFile.buffer : undefined, // Store as buffer (if using in DB)
-      mediaType: mediaFile ? mediaFile.mimetype : null,
-      fileName: mediaFile ? mediaFile.originalname : null,
-    });
+      media: mediaFile ? `/uploads/${mediaFile.filename}` : null,
+      seenBy: [req.user._id],
 
+    });
+    // Populate the sender field with username and avatar  
     const populatedMessage = await newMessage.populate("sender", "username avatar");
 
     await Chat.findByIdAndUpdate(chatId, {
       latestMessage: populatedMessage._id,
     });
+
+    // 🔥 Emit via socket
+    const io = req.app.get("io");
+    io.to(chatId).emit("messageReceived", populatedMessage); // all users in chat
 
     res.status(201).json(populatedMessage);
   } catch (err) {
@@ -124,3 +126,22 @@ export const sendMessage = async (req, res) => {
     });
   }
 };
+
+
+
+export const markMessageAsSeen = async (req, res) => {
+  try {
+    const messages = await Message.updateMany(
+      {
+        chat: req.params.chatId,
+        seeBy: { $ne: req.user._id },
+      },
+      { $push: { seeBy: req.user._id } }
+    );
+
+    res.status(200).json({ message: 'Messages marked as seen' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to mark seen' });
+  }
+}
+

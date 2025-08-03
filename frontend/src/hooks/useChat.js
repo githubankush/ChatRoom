@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useChatContext } from "../context/chatContext";
 import useSocket from "./useSocket";
 const useChat = () => {
-  const { selectedChat } = useChatContext();
+  const { selectedChat, fetchMessageFunction } = useChatContext();
   
   const { socket } = useSocket();
 
@@ -35,26 +35,35 @@ const useChat = () => {
     setMessages(res.data);
   };
 
- const sendMessage = async (chatId, text) => {
+ 
+  const sendMessage = async (chatId, text, media) => {
+    if (!chatId || (!text && !media)) {
+      console.error("Chat ID and content are required.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      if (text) formData.append("text", text);
+      if (media) formData.append("media", media);
+
+      const res = await axios.post(`/chat/${chatId}/message`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      });
+      console.log("Message sent:", res.data);
+
+      // Optionally fetch updated messages
+      await fetchMessageFunction(chatId);
+      return res.data;
+    } catch (error) {
+      console.error("Error sending message:", error.response?.data || error.message);
+      throw error;
+    }
+  };
   
-  console.log("text: ", text);
-  if (!chatId || !text) {
-    console.error("Chat ID and text are required to send a message.");
-    return;
-  }
-
-  try {
-    const res = await axios.post(`/chat/${chatId}/message`, {
-      text
-    });
-    await fetchMessages(chatId);
-    return res.data;
-  } catch (error) {
-    console.error("Error sending message:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
 
 
 

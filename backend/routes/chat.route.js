@@ -4,15 +4,17 @@ import {
   fetchUserChats,
   fetchMessages,
   sendMessage,
+  markMessageAsSeen,
 } from "../controllers/chat.controller.js";
 import {authMiddleware} from "../middlewares/auth.middleware.js"
-import multer from "multer";
+import upload from "../middlewares/upload.js";
 
 const router = express.Router();
 
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 router.post("/create", authMiddleware, createChat);
 router.get("/", authMiddleware, fetchUserChats);
 router.get("/:chatId/messages", authMiddleware, fetchMessages);
 router.post("/:chatId/message", authMiddleware, upload.single("media"), sendMessage);
+
+router.put("/:chatId/seen", authMiddleware, markMessageAsSeen);
 export default router;

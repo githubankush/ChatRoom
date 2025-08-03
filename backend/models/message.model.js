@@ -6,25 +6,18 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-
   chat: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chat',
     required: true,
   },
-
   text: {
     type: String,
     trim: true,
   },
-
    media: {
-      buffer: Buffer,
-      mimetype: String,
-      originalName: String,
+      type: String,
     },
-  
-
   seenBy: [
     {
       type: mongoose.Schema.Types.ObjectId,
