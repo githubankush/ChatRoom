@@ -1,17 +1,18 @@
 import Chat from '../models/chat.model.js';
 import Message from '../models/message.model.js';
-import User from '../models/user.model.js';
 
 // @desc   Create or fetch chat
+
+//new createChat function with file upload support
 export const createChat = async (req, res) => {
   try {
-    const { userId, isGroup = false, members = [], chatName } = req.body;
+    const { isGroup } = req.body;
+    const avatar = req.file ? `/uploads/${req.file.filename}` : null;
 
-    if (!isGroup && !userId) {
-      return res.status(400).json({ message: 'UserId required for private chat' });
-    }
+    if (isGroup === 'true') {
+      const members = JSON.parse(req.body.members || "[]");
+      const chatName = req.body.chatName;
 
-    if (isGroup) {
       if (members.length < 2 || !chatName) {
         return res.status(400).json({ message: 'Group must have a name and at least 2 members' });
       }
@@ -21,13 +22,20 @@ export const createChat = async (req, res) => {
         chatName,
         members: [...members, req.user._id],
         admin: req.user._id,
+        avatar, // Save avatar URL/path
       });
 
       const fullGroupChat = await Chat.findById(groupChat._id).populate('members', '-password');
       return res.status(201).json(fullGroupChat);
     }
 
-    // One-to-one chat logic
+    // Private chat logic
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'UserId required for private chat' });
+    }
+
     let existingChat = await Chat.findOne({
       isGroup: false,
       members: { $all: [req.user._id, userId] },
@@ -45,6 +53,26 @@ export const createChat = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ message: 'Server error while creating chat', error: err.message });
+  }
+};
+
+export const searchGroupChats = async (req, res) => {
+  const keyword = req.query.name;
+
+  if (!keyword) {
+    return res.status(400).json({ message: "Group chat name is required" });
+  }
+
+  try {
+    const groups = await Chat.find({
+      isGroup: true,
+      chatName: { $regex: keyword, $options: "i" }, // case-insensitive partial match
+    });
+
+    res.status(200).json(groups);
+  } catch (err) {
+    console.error("Group search failed:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

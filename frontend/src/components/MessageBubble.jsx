@@ -3,10 +3,9 @@ import MediaModal from "./MediaModal"; // ✅ import this
 
 const MessageBubble = ({ message, user, isGroup }) => {
   const [previewMedia, setPreviewMedia] = useState(null);
-
   const isMine = message?.sender?._id === user?._id;
   const mediaUrl = message?.media
-    ? `http://localhost:3000${message.media}`
+    ? `${import.meta.env.VITE_BACKEND_URL}${message.media}`
     : null;
 
   const isImage = mediaUrl && /\.(jpeg|jpg|png|gif|webp)$/i.test(mediaUrl);
@@ -35,7 +34,7 @@ const MessageBubble = ({ message, user, isGroup }) => {
         <div className={`flex items-end max-w-[75%] ${isMine ? "flex-row-reverse" : ""}`}>
           {!isMine && isGroup && (
             <img
-              src={message?.sender?.avatar || "/default-avatar.png"}
+              src={`${import.meta.env.VITE_BACKEND_URL}${message?.sender?.avatar}` || "/default-avatar.webp"}
               alt={message?.sender?.name}
               className="w-8 h-8 rounded-full object-cover mr-2"
             />

@@ -35,7 +35,7 @@ const Navbar = () => {
               onClick={() => setShowProfile((prev) => !prev)}
               className="text-sm text-gray-800 dark:text-white font-medium hover:underline"
             >
-              {<img className="w-10 h-10 rounded-full hover:opacity-80 " src={`${user?.avatar}`} />} 
+              {<img className="w-10 h-10 rounded-full hover:opacity-80 "  src={`http://localhost:3000${user?.avatar}`}  />} 
             </button>
             {user.username}
             {showProfile && (

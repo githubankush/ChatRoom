@@ -143,45 +143,32 @@ export const searchUsers = async (req, res) => {
 
 
 
-export const updateProfile = async (req, res) => {
+export const updateProfileAvatar = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const avatarPath = `/uploads/${req.file.filename}`;
 
-    const { username, email } = req.body;
-    if (username) user.username = username;
-    if (email) user.email = email;
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarPath },
+      { new: true }
+    );
 
-    if (req.file) {
-      const uploadsDir = path.join(__dirname, "../uploads");
-      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-
-      // Delete old avatar
-      if (user.avatar && user.avatar.startsWith("/uploads/")) {
-        const oldPath = path.join(__dirname, "..", user.avatar);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-      }
-
-      const ext = path.extname(req.file.originalname);
-      const filename = `${userId}_${Date.now()}${ext}`;
-      const filePath = path.join(uploadsDir, filename);
-
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      user.avatar = `/uploads/${filename}`;
-    }
-
-    await user.save();
-
-    res.status(200).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      avatar: user.avatar,
-    });
+    res.status(200).json({ user: updatedUser, message: "Avatar updated" });
   } catch (err) {
-    console.error("Profile update error:", err);
-    res.status(500).json({ message: "Profile update failed", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Failed to update avatar" });
   }
 };
+
+
+export const getAllUsers = async (req, res) => {
+  try{
+    const users = await User.find().select("-password");
+    res.status(200).json(users);
+  }
+  catch(err) {
+    console.error("Error fetching all users:", err);
+    res.status(500).json({ message: "Error fetching users", error: err.message });
+  }
+}
