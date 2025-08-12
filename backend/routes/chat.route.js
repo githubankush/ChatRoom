@@ -5,7 +5,8 @@ import {
   fetchMessages,
   sendMessage,
   markMessageAsSeen,
-  searchGroupChats, // 👈 Add this
+  searchGroupChats, 
+  avatarUpdate
 } from "../controllers/chat.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.js";
@@ -18,5 +19,6 @@ router.get("/search", authMiddleware, searchGroupChats); // 👈 New route
 router.get("/:chatId/messages", authMiddleware, fetchMessages);
 router.post("/:chatId/message", authMiddleware, upload.single("media"), sendMessage);
 router.put("/:chatId/seen", authMiddleware, markMessageAsSeen);
+router.put("/:id/avatar", upload.single("avatar"), avatarUpdate);
 
 export default router;

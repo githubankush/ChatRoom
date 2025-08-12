@@ -69,8 +69,6 @@ const ChatList = () => {
       axios.get(`/auth?search=${search}`),      // 🔍 Users
       axios.get(`/chat/search?name=${search}`), // 🔍 Group Chats
     ]);
-
-    // Optional: add type to identify in UI
     const users = userRes.data.map((user) => ({ ...user, type: "user" }));
     const groupChats = groupRes.data.map((group) => ({ ...group, type: "group" }));
 
@@ -204,9 +202,9 @@ const ChatList = () => {
               }`}
             >
               <img
-                src={avatar || <IoPerson className="text-gray-500" />}
-                className="w-15 h-15 rounded-full object-cover flex-shrink-0"
-                alt="Chat Avatar"
+                src={avatar || "/default-avatar.webp"}
+                className="w-15 h-15 rounded-full object-cover flex-shrink-0 text-xs text-gray-500 dark:text-gray-400"
+                alt="Avatar"
               />
 
               {/* Main Text Section */}

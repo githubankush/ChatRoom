@@ -1,11 +1,44 @@
 import { IoClose, IoPersonCircleOutline } from "react-icons/io5";
 import { MdAdminPanelSettings, MdPeopleAlt } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
-
+import { FiUpload } from "react-icons/fi";
+import { useState } from "react";
+import { useChatContext } from "../context/chatContext";
+import {toast} from "react-hot-toast";
+import axios from "../axios";
 const GroupChatDetails = ({ chat, onClose }) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const { setChats } = useChatContext();
+
   if (!chat) return null;
 
   const createdAtFormatted = new Date(chat.createdAt).toLocaleString();
+  const handleAvatarChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  try {
+    setIsUploading(true);
+    const res = await axios.put(`/chat/${chat._id}/avatar`, formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    // Update the chat avatar in state
+    setChats((prevChats) =>
+      prevChats.map((c) => (c._id === chat._id ? res.data : c))
+    );
+    toast.success("Group avatar updated!");
+  } catch (err) {
+    toast.error("Failed to update group avatar");
+    console.error("Error updating group avatar:", err);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   return (
     <div className="absolute top-0 right-0 w-80 h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg z-50 flex flex-col">
@@ -37,6 +70,7 @@ const GroupChatDetails = ({ chat, onClose }) => {
             className="w-24 h-24 rounded-full object-cover border shadow-sm"
             alt="Group Avatar"
           />
+          
           <p className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">
             {chat.chatName || "Unnamed Group"}
           </p>

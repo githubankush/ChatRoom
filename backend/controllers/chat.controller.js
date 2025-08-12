@@ -156,7 +156,6 @@ export const sendMessage = async (req, res) => {
 };
 
 
-
 export const markMessageAsSeen = async (req, res) => {
   try {
     const messages = await Message.updateMany(
@@ -173,3 +172,25 @@ export const markMessageAsSeen = async (req, res) => {
   }
 }
 
+export const avatarUpdate = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const chat = await Chat.findByIdAndUpdate(
+      req.params.id,
+      { avatar: `/uploads/${req.file.filename}` },
+      { new: true }
+    );
+
+    if (!chat) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    res.json(chat);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
