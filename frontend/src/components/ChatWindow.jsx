@@ -26,6 +26,7 @@ const ChatWindow = () => {
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const prevScrollHeightRef = useRef(0);
 
+  // Fetch messages when chat changes
   useEffect(() => {
     if (selectedChat?._id) {
       fetchMessageFunction(selectedChat._id);
@@ -33,18 +34,23 @@ const ChatWindow = () => {
     }
   }, [selectedChat]);
 
+  // Join room for socket events
   useEffect(() => {
     if (socket && selectedChat?._id) {
       socket.emit("joinRoom", selectedChat._id);
     }
   }, [socket, selectedChat]);
 
+  // Listen for new messages from socket
   useEffect(() => {
     if (!socket) return;
 
     const handleMessageReceive = (newMessage) => {
       if (newMessage.chat === selectedChat?._id) {
-        setMessages((prev) => [...prev, newMessage]);
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === newMessage._id);
+          return exists ? prev : [...prev, newMessage];
+        });
         setAutoScrollAllowed(true);
       }
     };
@@ -53,6 +59,7 @@ const ChatWindow = () => {
     return () => socket.off("messageReceived", handleMessageReceive);
   }, [socket, selectedChat]);
 
+  // Auto scroll when new messages arrive
   useEffect(() => {
     if (autoScrollAllowed && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -60,6 +67,7 @@ const ChatWindow = () => {
     setAutoScrollAllowed(false);
   }, [messages]);
 
+  // Scroll handler for "scroll to bottom" button & loading older msgs
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -112,8 +120,8 @@ const ChatWindow = () => {
               selectedChat?.isGroup && selectedChat?.avatar
                 ? `${backendBase}${selectedChat.avatar}`
                 : partner?.avatar
-                  ? `${backendBase}${partner.avatar}`
-                  : "/default-avatar.webp"
+                ? `${backendBase}${partner.avatar}`
+                : "/default-avatar.webp"
             }
             alt="Avatar"
             className="w-10 h-10 rounded-full object-cover"
@@ -128,7 +136,7 @@ const ChatWindow = () => {
           </p>
 
           {selectedChat?.isGroup ? (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
               {selectedChat.members?.map((user) => user.username).join(", ")}
             </p>
           ) : (
@@ -155,9 +163,9 @@ const ChatWindow = () => {
               <div className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 py-2">
                 {dateLabel}
               </div>
-              {group.map((msg) => (
+              {group.map((msg, index) => (
                 <MessageBubble
-                  key={msg._id}
+                  key={`${msg._id}-${index}`} // ✅ Unique key
                   message={msg}
                   user={user}
                   isGroup={selectedChat.isGroup}
@@ -185,7 +193,7 @@ const ChatWindow = () => {
       )}
 
       {/* Group Info Sidebar */}
-      {(showGroupInfo && selectedChat?.isGroup) && (
+      {showGroupInfo && selectedChat?.isGroup && (
         <GroupChatDetails
           chat={selectedChat}
           onClose={() => setShowGroupInfo(false)}

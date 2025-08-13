@@ -3,59 +3,78 @@ import axios from "../axios";
 import { useEffect } from "react";
 import { useChatContext } from "../context/chatContext";
 import useSocket from "./useSocket";
+
 const useChat = () => {
-  const { selectedChat, fetchMessageFunction } = useChatContext();
-  
+  const { selectedChat, setChats, setMessages, fetchMessageFunction } = useChatContext();
   const { socket } = useSocket();
 
-
+  // ✅ Listen for new incoming messages
   useEffect(() => {
     if (!socket) return;
-    socket.on("new-message", (data) => {
-      if (data.chatId === selectedChat._id) {
-        setMessages(prev => [...prev, data]);
+
+    const handleNewMessage = (data) => {
+      if (selectedChat && data.chatId === selectedChat._id) {
+        setMessages((prev) => [...prev, data]);
       }
-    });
-  }, [socket, selectedChat]);
-  const { setChats, setMessages } = useChatContext();
+    };
 
+    socket.on("new-message", handleNewMessage);
+    return () => socket.off("new-message", handleNewMessage);
+  }, [socket, selectedChat, setMessages]);
+
+  // ✅ Fetch all user chats
   const fetchUserChats = async () => {
-    const res = await axios.get("/chat");
-    setChats(res.data);
+    try {
+      const res = await axios.get("/chat");
+      setChats(res.data);
+    } catch (error) {
+      console.error("Error fetching chats:", error.response?.data || error.message);
+    }
   };
 
+  // ✅ Create a chat
   const createChat = async (userId) => {
-    const res = await axios.post("/chat/create", { userId });
-    await fetchUserChats(); // Refresh chat list
-    return res.data;
+    if (!userId) return null;
+    try {
+      const res = await axios.post("/chat/create", { userId });
+      await fetchUserChats();
+      return res.data;
+    } catch (error) {
+      console.error("Error creating chat:", error.response?.data || error.message);
+    }
   };
 
+  // ✅ Fetch messages safely
   const fetchMessages = async (chatId) => {
-    const res = await axios.get(`/chat/${chatId}/messages`);
-    setMessages(res.data);
+    if (!chatId) {
+      console.warn("⚠ fetchMessages called without a chatId");
+      return;
+    }
+    try {
+      const res = await axios.get(`/chat/${chatId}/messages`);
+      setMessages(res.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error.response?.data || error.message);
+    }
   };
 
- 
+  // ✅ Send a message
   const sendMessage = async (chatId, text, media) => {
     if (!chatId || (!text && !media)) {
       console.error("Chat ID and content are required.");
       return;
     }
-
     try {
       const formData = new FormData();
       if (text) formData.append("text", text);
       if (media) formData.append("media", media);
 
       const res = await axios.post(`/chat/${chatId}/message`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
-      console.log("Message sent:", res.data);
 
-      // Optionally fetch updated messages
+      // Optionally update UI immediately
       await fetchMessageFunction(chatId);
       return res.data;
     } catch (error) {
@@ -63,9 +82,6 @@ const useChat = () => {
       throw error;
     }
   };
-  
-
-
 
   return { fetchUserChats, createChat, fetchMessages, sendMessage };
 };
