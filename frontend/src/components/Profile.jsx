@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/authContext";
 
 const Profile = ({ user, onClose }) => {
+  const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
@@ -30,7 +31,7 @@ const Profile = ({ user, onClose }) => {
 
     try {
       setIsUploading(true);
-      const res = await axios.put("/auth/avatar", formData, {
+      const res = await axios.put(`${backendBase}/auth/avatar`, formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "multipart/form-data",
