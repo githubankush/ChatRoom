@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../axios";
+import axios from "axios";
 import { FiLogOut, FiUpload } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/authContext";
@@ -31,7 +31,7 @@ const Profile = ({ user, onClose }) => {
 
     try {
       setIsUploading(true);
-      const res = await axios.put(`${backendBase}/auth/avatar`, formData, {
+      const res = await axios.put(`${backendBase}/api/auth/avatar`, formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "multipart/form-data",
