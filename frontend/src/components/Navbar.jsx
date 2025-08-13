@@ -9,7 +9,7 @@ import Profile from "./Profile"; // Make sure this path is correct
 const Navbar = () => {
   const { user, setUser } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
-
+  const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
   
 
   return (
@@ -35,7 +35,7 @@ const Navbar = () => {
               onClick={() => setShowProfile((prev) => !prev)}
               className="text-sm text-gray-800 dark:text-white font-medium hover:underline"
             >
-              {<img className="w-10 h-10 rounded-full hover:opacity-80 "  src={`http://localhost:3000${user?.avatar}`}  />} 
+              {<img className="w-10 h-10 rounded-full hover:opacity-80 "  src={`${backendBase}${user?.avatar}`}  />} 
             </button>
             {user.username}
             {showProfile && (
