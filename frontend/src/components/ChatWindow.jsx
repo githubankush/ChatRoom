@@ -1,19 +1,14 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../context/authContext";
 import { useChatContext } from "../context/chatContext";
 import MessageBubble from "./MessageBubble";
-import { useEffect, useRef, useState } from "react";
 import useSocket from "../hooks/useSocket";
 import { groupMessagesByDate } from "../utils/groupMessagesByDate";
 import GroupChatDetails from "../components/GroupChatDetails ";
 
 const ChatWindow = () => {
-  const {
-    messages,
-    selectedChat,
-    fetchMessageFunction,
-    setMessages,
-    fetchOlderMessages,
-  } = useChatContext();
+  const { messages, selectedChat, fetchMessageFunction, setMessages, fetchOlderMessages } =
+    useChatContext();
   const { user } = useAuth();
   const { socket } = useSocket();
 
@@ -26,6 +21,8 @@ const ChatWindow = () => {
   const [autoScrollAllowed, setAutoScrollAllowed] = useState(true);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
 
+  const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
   // Fetch messages when chat changes
   useEffect(() => {
     if (selectedChat?._id) {
@@ -34,38 +31,36 @@ const ChatWindow = () => {
     }
   }, [selectedChat]);
 
-  // Join room only once per selectedChat change
+  // Join chat room
   useEffect(() => {
     if (socket && selectedChat?._id) {
       socket.emit("joinRoom", selectedChat._id);
     }
-  }, [socket, selectedChat?._id]); // ✅ only trigger when chat id changes
+  }, [socket, selectedChat?._id]);
 
-  // Listen for new messages from socket
-  useEffect(() => {
-    if (!socket || !selectedChat?._id) return;
-
-    const handleMessageReceive = (newMessage) => {
-      if (newMessage.chat === selectedChat._id) {
+  // Handle incoming messages
+  const handleMessageReceive = useCallback(
+    (newMessage) => {
+      if (newMessage.chat === selectedChat?._id) {
         setMessages((prev) => {
           const exists = prev.some((m) => m._id === newMessage._id);
           return exists ? prev : [...prev, newMessage];
         });
         setAutoScrollAllowed(true);
       }
-    };
+    },
+    [selectedChat?._id, setMessages]
+  );
 
-    // ✅ Remove existing listener first to prevent duplicates
-    socket.off("messageReceived", handleMessageReceive);
+  useEffect(() => {
+    if (!socket) return;
     socket.on("messageReceived", handleMessageReceive);
-
-    // ✅ Cleanup listener when chat changes/unmount
     return () => {
       socket.off("messageReceived", handleMessageReceive);
     };
-  }, [socket, selectedChat?._id, setMessages]);
+  }, [socket, handleMessageReceive]);
 
-  // Auto scroll on new messages
+  // Auto scroll to bottom on new messages
   useEffect(() => {
     if (autoScrollAllowed && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -73,13 +68,12 @@ const ChatWindow = () => {
     setAutoScrollAllowed(false);
   }, [messages]);
 
-  // Handle scrolling & load older messages
+  // Scroll handling for older messages & scroll-to-bottom button
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const isAtBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
     setShowScrollToBottom(!isAtBottom);
 
     if (el.scrollTop === 0 && !loadingOlder) {
@@ -112,8 +106,6 @@ const ChatWindow = () => {
   }
 
   const partner = selectedChat.members?.find((m) => m._id !== user?._id);
-  const backendBase =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-160px)] relative bg-gray-100 dark:bg-gray-800">
@@ -135,14 +127,12 @@ const ChatWindow = () => {
             className="w-10 h-10 rounded-full object-cover"
           />
         </div>
-
         <div>
           <p className="font-semibold text-sm text-gray-900 dark:text-white">
             {selectedChat?.isGroup
               ? selectedChat.chatName || "Unnamed Group"
               : partner?.username || "Chat"}
           </p>
-
           {selectedChat?.isGroup ? (
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
               {selectedChat.members?.map((u) => u.username).join(", ")}
@@ -188,7 +178,6 @@ const ChatWindow = () => {
             No messages yet. Start the conversation!
           </div>
         )}
-
         <div ref={bottomRef} />
       </div>
 
