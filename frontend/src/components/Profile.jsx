@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../axios";
+import axios from "axios";
 import { FiLogOut, FiUpload } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/authContext";
@@ -53,7 +53,7 @@ const Profile = ({ user, onClose }) => {
         <label className="relative cursor-pointer group">
           <img
             className="w-16 h-16 object-cover rounded-full border-2 border-gray-300 dark:border-gray-600"
-             src={`http://localhost:3000${user?.avatar}`} 
+             src={`${backendBase}${user?.avatar}`} 
             alt="User Avatar"
           />
           <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
