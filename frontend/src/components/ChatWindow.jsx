@@ -19,12 +19,12 @@ const ChatWindow = () => {
 
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
+  const prevScrollHeightRef = useRef(0);
 
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [autoScrollAllowed, setAutoScrollAllowed] = useState(true);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
-  const prevScrollHeightRef = useRef(0);
 
   // Fetch messages when chat changes
   useEffect(() => {
@@ -34,19 +34,19 @@ const ChatWindow = () => {
     }
   }, [selectedChat]);
 
-  // Join room for socket events
+  // Join room only once per selectedChat change
   useEffect(() => {
     if (socket && selectedChat?._id) {
       socket.emit("joinRoom", selectedChat._id);
     }
-  }, [socket, selectedChat]);
+  }, [socket, selectedChat?._id]); // ✅ only trigger when chat id changes
 
   // Listen for new messages from socket
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !selectedChat?._id) return;
 
     const handleMessageReceive = (newMessage) => {
-      if (newMessage.chat === selectedChat?._id) {
+      if (newMessage.chat === selectedChat._id) {
         setMessages((prev) => {
           const exists = prev.some((m) => m._id === newMessage._id);
           return exists ? prev : [...prev, newMessage];
@@ -55,11 +55,17 @@ const ChatWindow = () => {
       }
     };
 
+    // ✅ Remove existing listener first to prevent duplicates
+    socket.off("messageReceived", handleMessageReceive);
     socket.on("messageReceived", handleMessageReceive);
-    return () => socket.off("messageReceived", handleMessageReceive);
-  }, [socket, selectedChat]);
 
-  // Auto scroll when new messages arrive
+    // ✅ Cleanup listener when chat changes/unmount
+    return () => {
+      socket.off("messageReceived", handleMessageReceive);
+    };
+  }, [socket, selectedChat?._id, setMessages]);
+
+  // Auto scroll on new messages
   useEffect(() => {
     if (autoScrollAllowed && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -67,12 +73,13 @@ const ChatWindow = () => {
     setAutoScrollAllowed(false);
   }, [messages]);
 
-  // Scroll handler for "scroll to bottom" button & loading older msgs
+  // Handle scrolling & load older messages
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    const isAtBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 150;
     setShowScrollToBottom(!isAtBottom);
 
     if (el.scrollTop === 0 && !loadingOlder) {
@@ -105,7 +112,8 @@ const ChatWindow = () => {
   }
 
   const partner = selectedChat.members?.find((m) => m._id !== user?._id);
-  const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+  const backendBase =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-160px)] relative bg-gray-100 dark:bg-gray-800">
@@ -137,7 +145,7 @@ const ChatWindow = () => {
 
           {selectedChat?.isGroup ? (
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-              {selectedChat.members?.map((user) => user.username).join(", ")}
+              {selectedChat.members?.map((u) => u.username).join(", ")}
             </p>
           ) : (
             <p className="text-xs text-gray-500 dark:text-gray-400">Online</p>
@@ -158,21 +166,23 @@ const ChatWindow = () => {
         )}
 
         {messages.length > 0 ? (
-          Object.entries(groupMessagesByDate(messages)).map(([dateLabel, group]) => (
-            <div key={dateLabel} className="space-y-2">
-              <div className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 py-2">
-                {dateLabel}
+          Object.entries(groupMessagesByDate(messages)).map(
+            ([dateLabel, group]) => (
+              <div key={dateLabel} className="space-y-2">
+                <div className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 py-2">
+                  {dateLabel}
+                </div>
+                {group.map((msg) => (
+                  <MessageBubble
+                    key={msg._id}
+                    message={msg}
+                    user={user}
+                    isGroup={selectedChat.isGroup}
+                  />
+                ))}
               </div>
-              {group.map((msg, index) => (
-                <MessageBubble
-                  key={`${msg._id}-${index}`} // ✅ Unique key
-                  message={msg}
-                  user={user}
-                  isGroup={selectedChat.isGroup}
-                />
-              ))}
-            </div>
-          ))
+            )
+          )
         ) : (
           <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
             No messages yet. Start the conversation!

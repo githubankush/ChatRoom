@@ -8,19 +8,6 @@ const useChat = () => {
   const { selectedChat, setChats, setMessages, fetchMessageFunction } = useChatContext();
   const { socket } = useSocket();
 
-  // ✅ Listen for new incoming messages
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleNewMessage = (data) => {
-      if (selectedChat && data.chatId === selectedChat._id) {
-        setMessages((prev) => [...prev, data]);
-      }
-    };
-
-    socket.on("new-message", handleNewMessage);
-    return () => socket.off("new-message", handleNewMessage);
-  }, [socket, selectedChat, setMessages]);
 
   // ✅ Fetch all user chats
   const fetchUserChats = async () => {

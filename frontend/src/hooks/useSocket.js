@@ -1,35 +1,38 @@
-// ✅ useSocket.js
-import { useEffect, useRef, useState } from "react";
+// useSocket.js
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
+let socket; // persistent across hook calls
+
 const useSocket = () => {
-  const socketRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3000", {
-      withCredentials: true,
-    });
+    if (!socket) {
+      socket = io(import.meta.env.VITE_BACKEND_URL, {
+        withCredentials: true,
+      });
+    }
 
-    socketRef.current.on("connect", () => {
-      console.log("✅ Socket connected:", socketRef.current.id);
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
       setIsConnected(true);
     });
 
-    socketRef.current.on("disconnect", () => {
+    socket.on("disconnect", () => {
       console.log("❌ Socket disconnected");
       setIsConnected(false);
     });
 
     return () => {
-      socketRef.current.disconnect();
+      // Don't disconnect here if we want global persistence
+      // Only remove event listeners to avoid stacking
+      socket.off("connect");
+      socket.off("disconnect");
     };
   }, []);
 
-  return {
-    socket: socketRef.current,
-    isConnected,
-  };
+  return { socket, isConnected };
 };
 
 export default useSocket;
