@@ -122,6 +122,8 @@ export const sendMessage = async (req, res) => {
     const { text } = req.body;
     const mediaFile = req.file;
 
+    
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
     if (!chatId) return res.status(400).json({ message: "Chat ID is required" });
     if (!text && !mediaFile) {
       return res.status(400).json({ message: "Message content is empty" });
@@ -148,6 +150,7 @@ export const sendMessage = async (req, res) => {
 
     res.status(201).json(populatedMessage);
   } catch (err) {
+    console.error("Sendmessage Error:", err);
     res.status(500).json({
       message: "Error sending message",
       error: err.message,
