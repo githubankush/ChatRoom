@@ -39,18 +39,20 @@ const ChatWindow = () => {
   }, [socket, selectedChat?._id]);
 
   // Handle incoming messages
-  const handleMessageReceive = useCallback(
-    (newMessage) => {
+const handleMessageReceive = useCallback(
+  (newMessage) => {
+    setMessages((prev) => {
+      // Only add if it's for the current chat
       if (newMessage.chat === selectedChat?._id) {
-        setMessages((prev) => {
-          const exists = prev.some((m) => m._id === newMessage._id);
-          return exists ? prev : [...prev, newMessage];
-        });
-        setAutoScrollAllowed(true);
+        const exists = prev.some((m) => m._id === newMessage._id);
+        return exists ? prev : [...prev, newMessage];
       }
-    },
-    [selectedChat?._id, setMessages]
-  );
+      return prev;
+    });
+    setAutoScrollAllowed(true);
+  },
+  [selectedChat?._id, setMessages] // keep dependency minimal
+);
 
   useEffect(() => {
     if (!socket) return;
@@ -58,7 +60,7 @@ const ChatWindow = () => {
     return () => {
       socket.off("messageReceived", handleMessageReceive);
     };
-  }, [socket, handleMessageReceive]);
+  }, [socket]);
 
   // Auto scroll to bottom on new messages
   useEffect(() => {
