@@ -7,7 +7,7 @@ import { useAuth } from "../context/authContext";
 
 const Profile = ({ user, onClose }) => {
   const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-  const { setUser } = useAuth();
+  const {user, setUser } = useAuth();
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
 
