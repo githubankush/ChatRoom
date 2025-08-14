@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+// src/components/ChatWindow.jsx
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/authContext";
 import { useChatContext } from "../context/chatContext";
 import MessageBubble from "./MessageBubble";
@@ -15,6 +16,7 @@ const ChatWindow = () => {
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
   const prevScrollHeightRef = useRef(0);
+  const selectedChatIdRef = useRef(selectedChat?._id);
 
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -23,13 +25,18 @@ const ChatWindow = () => {
 
   const backendBase = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
+  // Keep current selected chat id in ref
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChat?._id;
+  }, [selectedChat?._id]);
+
   // Fetch messages when chat changes
   useEffect(() => {
     if (selectedChat?._id) {
       fetchMessageFunction(selectedChat._id);
       setAutoScrollAllowed(true);
     }
-  }, [selectedChat]);
+  }, [selectedChat?._id]);
 
   // Join chat room
   useEffect(() => {
@@ -38,29 +45,26 @@ const ChatWindow = () => {
     }
   }, [socket, selectedChat?._id]);
 
-  // Handle incoming messages
-const handleMessageReceive = useCallback(
-  (newMessage) => {
-    setMessages((prev) => {
-      // Only add if it's for the current chat
-      if (newMessage.chat === selectedChat?._id) {
-        const exists = prev.some((m) => m._id === newMessage._id);
-        return exists ? prev : [...prev, newMessage];
-      }
-      return prev;
-    });
-    setAutoScrollAllowed(true);
-  },
-  [selectedChat?._id, setMessages] // keep dependency minimal
-);
-
+  // Stable message listener to prevent duplicates
   useEffect(() => {
     if (!socket) return;
+
+    const handleMessageReceive = (newMessage) => {
+      if (newMessage.chat === selectedChatIdRef.current) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === newMessage._id);
+          return exists ? prev : [...prev, newMessage];
+        });
+        setAutoScrollAllowed(true);
+      }
+    };
+
     socket.on("messageReceived", handleMessageReceive);
+
     return () => {
       socket.off("messageReceived", handleMessageReceive);
     };
-  }, [socket]);
+  }, [socket, setMessages]);
 
   // Auto scroll to bottom on new messages
   useEffect(() => {
@@ -158,23 +162,21 @@ const handleMessageReceive = useCallback(
         )}
 
         {messages.length > 0 ? (
-          Object.entries(groupMessagesByDate(messages)).map(
-            ([dateLabel, group]) => (
-              <div key={dateLabel} className="space-y-2">
-                <div className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 py-2">
-                  {dateLabel}
-                </div>
-                {group.map((msg) => (
-                  <MessageBubble
-                    key={msg._id}
-                    message={msg}
-                    user={user}
-                    isGroup={selectedChat.isGroup}
-                  />
-                ))}
+          Object.entries(groupMessagesByDate(messages)).map(([dateLabel, group]) => (
+            <div key={dateLabel} className="space-y-2">
+              <div className="text-center text-xs font-semibold text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 py-2">
+                {dateLabel}
               </div>
-            )
-          )
+              {group.map((msg) => (
+                <MessageBubble
+                  key={msg._id}
+                  message={msg}
+                  user={user}
+                  isGroup={selectedChat.isGroup}
+                />
+              ))}
+            </div>
+          ))
         ) : (
           <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
             No messages yet. Start the conversation!
